@@ -1,5 +1,6 @@
-package rx_playground.com.jablonski.cameracomponentlib;
+package rx_playground.com.jablonski.cameracomponentlib.view.helper;
 
+import android.graphics.SurfaceTexture;
 import android.hardware.camera2.CameraAccessException;
 import android.hardware.camera2.CameraCaptureSession;
 import android.hardware.camera2.CameraDevice;
@@ -15,11 +16,13 @@ import android.view.Surface;
 
 import java.util.Arrays;
 
+import rx_playground.com.jablonski.cameracomponentlib.view.CameraAPI21;
+
 /**
  * Created by yabol on 10.06.2017.
  */
 @RequiresApi(api = Build.VERSION_CODES.LOLLIPOP)
-public class CameraPreviewCapturer {
+public class CameraPreviewCapture {
     private static final int STATE_PREVIEW = 0;
     private static final int STATE_WAITING_LOCK = 1;
     private static final int STATE_WAITING_PRECAPTURE = 2;
@@ -41,7 +44,7 @@ public class CameraPreviewCapturer {
 
     private CameraCaptureSession.CaptureCallback captureCallback = new CameraCaptureSession.CaptureCallback() {
         private void process(CaptureResult result) {
-            switch (CameraPreviewCapturer.this.state) {
+            switch (CameraPreviewCapture.this.state) {
                 case STATE_PREVIEW: {
                     // We have nothing to do when the camera preview is working normally.
                     break;
@@ -98,53 +101,44 @@ public class CameraPreviewCapturer {
         }
     };
 
-    public CameraPreviewCapturer(CameraAPI21 camera){
+    public CameraPreviewCapture(CameraAPI21 camera){
         this.cameraAPI = camera;
     }
 
 
     public void createPreviewSession(){
-        Surface surface = new Surface(this.cameraAPI.getTextureView().getSurfaceTexture());
-        try {
-            CameraDevice camera = this.cameraAPI.getCameraDevice();
-            this.previewBuilder = camera.createCaptureRequest(CameraDevice.TEMPLATE_PREVIEW);
-            this.previewBuilder.addTarget(surface);
+        SurfaceTexture texutre = this.cameraAPI.getTextureView().getSurfaceTexture();
+        if(texutre != null) {
+            Surface surface = new Surface(this.cameraAPI.getTextureView().getSurfaceTexture());
+            try {
+                CameraDevice camera = this.cameraAPI.getCameraDevice();
+                this.previewBuilder = camera.createCaptureRequest(CameraDevice.TEMPLATE_PREVIEW);
+                this.previewBuilder.addTarget(surface);
 
-            camera.createCaptureSession(Arrays.asList(surface, this.cameraAPI.getImageReader().getSurface()), new CameraCaptureSession.StateCallback() {
-                @Override
-                public void onConfigured(@NonNull CameraCaptureSession session) {
+                camera.createCaptureSession(Arrays.asList(surface, this.cameraAPI.getImageReader().getSurface()), new CameraCaptureSession.StateCallback() {
+                    @Override
+                    public void onConfigured(@NonNull CameraCaptureSession session) {
 
-                    captureSession = session;
+                        captureSession = session;
 
-                    previewBuilder.set(CaptureRequest.CONTROL_AF_MODE, CaptureRequest.CONTROL_AF_MODE_CONTINUOUS_PICTURE);
+                        previewBuilder.set(CaptureRequest.CONTROL_AF_MODE, CaptureRequest.CONTROL_AF_MODE_CONTINUOUS_PICTURE);
 
-                    captureRequest = previewBuilder.build();
-                    try {
-                        captureSession.setRepeatingRequest(captureRequest, captureCallback, cameraAPI.getHandler());
-                    } catch (CameraAccessException e) {
-                        e.printStackTrace();
+                        captureRequest = previewBuilder.build();
+                        try {
+                            captureSession.setRepeatingRequest(captureRequest, captureCallback, cameraAPI.getHandler());
+                        } catch (CameraAccessException e) {
+                            e.printStackTrace();
+                        }
                     }
-                }
 
-                @Override
-                public void onConfigureFailed(@NonNull CameraCaptureSession session) {
+                    @Override
+                    public void onConfigureFailed(@NonNull CameraCaptureSession session) {
 
-                }
-            }, null);
-        } catch (CameraAccessException e) {
-            e.printStackTrace();
-        }
-    }
-
-    public void lockCameraFocus(){
-        this.previewBuilder.set(CaptureRequest.CONTROL_AF_TRIGGER,
-                CameraMetadata.CONTROL_AF_TRIGGER_START);
-        this.state = STATE_WAITING_LOCK;
-        try {
-            this.captureSession.capture(this.previewBuilder.build(), this.captureCallback,
-                    this.cameraAPI.getHandler());
-        } catch (CameraAccessException e) {
-            e.printStackTrace();
+                    }
+                }, null);
+            } catch (CameraAccessException e) {
+                e.printStackTrace();
+            }
         }
     }
 
@@ -157,6 +151,20 @@ public class CameraPreviewCapturer {
                     this.cameraAPI.getHandler());
             this.state = STATE_PREVIEW;
             this.captureSession.setRepeatingRequest(this.captureRequest, this.captureCallback,
+                    this.cameraAPI.getHandler());
+        } catch (CameraAccessException e) {
+            e.printStackTrace();
+        }
+    }
+
+    public void lockFocus() {
+        try {
+            // This is how to tell the camera to lock focus.
+            this.previewBuilder.set(CaptureRequest.CONTROL_AF_TRIGGER,
+                    CameraMetadata.CONTROL_AF_TRIGGER_START);
+            // Tell #mCaptureCallback to wait for the lock.
+            this.state = STATE_WAITING_LOCK;
+            this.captureSession.capture(this.previewBuilder.build(), this.captureCallback,
                     this.cameraAPI.getHandler());
         } catch (CameraAccessException e) {
             e.printStackTrace();
@@ -215,4 +223,10 @@ public class CameraPreviewCapturer {
         return (ORIENTATIONS.get(rotation) + this.cameraAPI.getCameraOrientation() + 270) % 360;
     }
 
+    public void stopCapture(){
+        if(this.captureSession != null){
+            this.captureSession.close();
+            this.captureSession = null;
+        }
+    }
 }

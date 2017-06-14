@@ -1,4 +1,4 @@
-package rx_playground.com.jablonski.cameracomponentlib;
+package rx_playground.com.jablonski.cameracomponentlib.view.helper;
 
 import android.os.Build;
 import android.support.annotation.RequiresApi;

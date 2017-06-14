@@ -1,10 +1,9 @@
-package rx_playground.com.jablonski.cameracomponentlib;
+package rx_playground.com.jablonski.cameracomponentlib.view;
 
 import android.Manifest;
 import android.app.Activity;
 import android.content.Context;
 import android.content.pm.PackageManager;
-import android.content.res.Configuration;
 import android.graphics.ImageFormat;
 import android.graphics.Point;
 import android.graphics.SurfaceTexture;
@@ -23,18 +22,22 @@ import android.util.Size;
 import android.view.Surface;
 import android.view.TextureView;
 
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
-import java.util.List;
 import java.util.concurrent.Semaphore;
 import java.util.concurrent.TimeUnit;
+
+import rx_playground.com.jablonski.cameracomponentlib.view.helper.CameraPreviewCapture;
+import rx_playground.com.jablonski.cameracomponentlib.view.helper.OptimalPreviewSizeEvaluator;
+import rx_playground.com.jablonski.cameracomponentlib.view.helper.PreviewTransformer;
+import rx_playground.com.jablonski.cameracomponentlib.view.helper.SizeAreaComparator;
+import rx_playground.com.jablonski.cameracomponentlib.view.interfaces.CameraAPI;
 
 /**
  * Created by yabol on 10.06.2017.
  */
 @RequiresApi(api = Build.VERSION_CODES.LOLLIPOP)
-public class CameraAPI21 implements CameraAPI{
+public class CameraAPI21 implements CameraAPI {
     private Activity activity;
     private CameraDevice camera;
     private CameraManager manager;
@@ -42,13 +45,13 @@ public class CameraAPI21 implements CameraAPI{
     private HandlerThread backgroundThread;
     private Handler backgroundHandler;
     private Semaphore cameraOpenCloseLock = new Semaphore(1);
-    private AutoFitTextureView cameraPreview;
+    private TextureView cameraPreview;
     private ImageReader reader;
     private Size cameraPreviewSize;
     private boolean flashSupported;
     private int displayRotation;
-    private int cameraSensorOrientaiton;
-    private CameraPreviewCapturer cameraPreviewCapturerHandler;
+    private int cameraSensorOrientation;
+    private CameraPreviewCapture cameraPreviewCaptureHandler;
 
 
     private static final int MAX_PREVIEW_WIDTH = 1920;
@@ -58,11 +61,10 @@ public class CameraAPI21 implements CameraAPI{
 
         @Override
         public void onOpened(@NonNull CameraDevice cameraDevice) {
-            // This method is called when the camera is opened.  We start camera preview here.
             cameraOpenCloseLock.release();
             camera = cameraDevice;
-            cameraPreviewCapturerHandler = new CameraPreviewCapturer(CameraAPI21.this);
-            cameraPreviewCapturerHandler.createPreviewSession();
+            cameraPreviewCaptureHandler = new CameraPreviewCapture(CameraAPI21.this);
+            cameraPreviewCaptureHandler.createPreviewSession();
         }
 
         @Override
@@ -89,28 +91,29 @@ public class CameraAPI21 implements CameraAPI{
 
         @Override
         public void onImageAvailable(ImageReader reader) {
-           // backgroundHandler.post(new ImageSaver(reader.acquireNextImage(), mFile));
+            //backgroundHandler.post(new ImageSaver(reader.acquireNextImage(), mFile));
         }
 
     };
 
-    public CameraAPI21(Activity activity, AutoFitTextureView cameraPreview){
+    public CameraAPI21(Activity activity, TextureView cameraPreview){
         this.activity = activity;
         this.manager = (CameraManager) activity.getSystemService(Context.CAMERA_SERVICE);
         this.cameraPreview = cameraPreview;
     }
     @Override
     public void takePhoto() {
-
+        this.cameraPreviewCaptureHandler.lockFocus();
     }
 
     @Override
-    public void startCamera(int width, int heigth) {
+    public void startCamera(int width, int height) {
+        if(this.cameraPreview.isAvailable()){
         startBackgroundThread();
         if(ContextCompat.checkSelfPermission(this.activity, Manifest.permission.CAMERA) == PackageManager.PERMISSION_GRANTED) {
 
-            setUpCamera(width, heigth);
-            new PreviewTransformer(this).transform(width, heigth, this.displayRotation);
+            setUpCamera(width, height);
+            new PreviewTransformer(this).transform(width, height, this.displayRotation);
             try {
                 if (!cameraOpenCloseLock.tryAcquire(2500, TimeUnit.MILLISECONDS)) {
                     throw new RuntimeException("Time out waiting to lock camera opening.");
@@ -120,53 +123,78 @@ public class CameraAPI21 implements CameraAPI{
                 e.printStackTrace();
             }
         }
+        }else{
+            setPreviewTextureListener();
+        }
+    }
+
+    private void setPreviewTextureListener(){
+
+        this.cameraPreview.setSurfaceTextureListener(new TextureView.SurfaceTextureListener() {
+
+            @Override
+            public void onSurfaceTextureAvailable(SurfaceTexture texture, int width, int height) {
+                startCamera(width, height);
+            }
+
+            @Override
+            public void onSurfaceTextureSizeChanged(SurfaceTexture texture, int width, int height) {
+                new PreviewTransformer(CameraAPI21.this).transform(width, height, displayRotation);
+            }
+
+            @Override
+            public boolean onSurfaceTextureDestroyed(SurfaceTexture texture) {
+                return true;
+            }
+
+            @Override
+            public void onSurfaceTextureUpdated(SurfaceTexture texture) {
+            }
+
+        });
+
     }
 
     private void setUpCamera(int width, int height){
         CameraManager manager = (CameraManager) this.activity.getSystemService(Context.CAMERA_SERVICE);
         try {
             for(String cameraId : manager.getCameraIdList()){
-                CameraCharacteristics characteristics
-                        = manager.getCameraCharacteristics(cameraId);
-
-                StreamConfigurationMap map = characteristics.get(
-                        CameraCharacteristics.SCALER_STREAM_CONFIGURATION_MAP);
-                if (map == null) {
-                    continue;
-                }
-
-                Size largest = Collections.max(
-                        Arrays.asList(map.getOutputSizes(ImageFormat.JPEG)),
-                        new SizeAreaComparator());
-
-                this.reader = ImageReader.newInstance(largest.getWidth(), largest.getHeight(),
-                        ImageFormat.JPEG, 1);
-                this.reader.setOnImageAvailableListener(
-                        this.imageCapturedListener, this.backgroundHandler);
-
-                this.displayRotation = activity.getWindowManager().getDefaultDisplay().getRotation();
-
-
-                this.cameraPreviewSize = getCameraPreviewSize(characteristics, map, largest, width, height);
-
-                int orientation = this.activity.getResources().getConfiguration().orientation;
-                if (orientation == Configuration.ORIENTATION_LANDSCAPE) {
-                    this.cameraPreview.setAspectRatio(
-                            this.cameraPreviewSize.getWidth(), this.cameraPreviewSize.getHeight());
-                } else {
-                    this.cameraPreview.setAspectRatio(
-                            this.cameraPreviewSize.getHeight(), this.cameraPreviewSize.getWidth());
-                }
-
-                Boolean available = characteristics.get(CameraCharacteristics.FLASH_INFO_AVAILABLE);
-                this.flashSupported = available == null ? false : available;
-
-                this.cameraId = cameraId;
+                configureSingleCamera(cameraId, width, height);
             }
         } catch (CameraAccessException e) {
             e.printStackTrace();
         }
 
+    }
+
+    private void configureSingleCamera(String cameraId, int width, int height) throws CameraAccessException {
+        CameraCharacteristics characteristics
+                = manager.getCameraCharacteristics(cameraId);
+
+        StreamConfigurationMap map = characteristics.get(
+                CameraCharacteristics.SCALER_STREAM_CONFIGURATION_MAP);
+        if (map == null) {
+            return;
+        }
+
+        Size largest = Collections.max(
+                Arrays.asList(map.getOutputSizes(ImageFormat.JPEG)),
+                new SizeAreaComparator());
+
+        this.reader = ImageReader.newInstance(largest.getWidth(), largest.getHeight(),
+                ImageFormat.JPEG, 1);
+        this.reader.setOnImageAvailableListener(
+                this.imageCapturedListener, this.backgroundHandler);
+
+        this.displayRotation = activity.getWindowManager().getDefaultDisplay().getRotation();
+
+
+        this.cameraPreviewSize = getCameraPreviewSize(characteristics, map, largest, width, height);
+
+        Boolean available = characteristics.get(CameraCharacteristics.FLASH_INFO_AVAILABLE);
+        this.flashSupported = available == null ? false : available;
+
+        this.cameraId = cameraId;
     }
 
     private Size getCameraPreviewSize(CameraCharacteristics characteristics, StreamConfigurationMap map, Size largest, int width, int height){
@@ -192,7 +220,7 @@ public class CameraAPI21 implements CameraAPI{
         if (maxPreviewHeight > MAX_PREVIEW_HEIGHT) {
             maxPreviewHeight = MAX_PREVIEW_HEIGHT;
         }
-        return chooseOptimalSize(map.getOutputSizes(SurfaceTexture.class),
+        return new OptimalPreviewSizeEvaluator().chooseOptimalSize(map.getOutputSizes(SurfaceTexture.class),
                 rotatedPreviewWidth, rotatedPreviewHeight, maxPreviewWidth,
                 maxPreviewHeight, largest);
     }
@@ -201,7 +229,7 @@ public class CameraAPI21 implements CameraAPI{
         boolean swappedDimensions = false;
         Integer cameraSensorOrientation = characteristics.get(CameraCharacteristics.SENSOR_ORIENTATION);
         if(cameraSensorOrientation != null) {
-            this.cameraSensorOrientaiton = cameraSensorOrientation;
+            this.cameraSensorOrientation = cameraSensorOrientation;
             switch (displayRotation) {
                 case Surface.ROTATION_0:
                 case Surface.ROTATION_180:
@@ -222,38 +250,6 @@ public class CameraAPI21 implements CameraAPI{
         return swappedDimensions;
     }
 
-    private Size chooseOptimalSize(Size[] choices, int textureViewWidth,
-                                          int textureViewHeight, int maxWidth, int maxHeight, Size aspectRatio) {
-
-        // Collect the supported resolutions that are at least as big as the preview Surface
-        List<Size> bigEnough = new ArrayList<>();
-        // Collect the supported resolutions that are smaller than the preview Surface
-        List<Size> notBigEnough = new ArrayList<>();
-        int w = aspectRatio.getWidth();
-        int h = aspectRatio.getHeight();
-        for (Size option : choices) {
-            if (option.getWidth() <= maxWidth && option.getHeight() <= maxHeight &&
-                    option.getHeight() == option.getWidth() * h / w) {
-                if (option.getWidth() >= textureViewWidth &&
-                        option.getHeight() >= textureViewHeight) {
-                    bigEnough.add(option);
-                } else {
-                    notBigEnough.add(option);
-                }
-            }
-        }
-
-        // Pick the smallest of those big enough. If there is no one big enough, pick the
-        // largest of those not big enough.
-        if (bigEnough.size() > 0) {
-            return Collections.min(bigEnough, new SizeAreaComparator());
-        } else if (notBigEnough.size() > 0) {
-            return Collections.max(notBigEnough, new SizeAreaComparator());
-        } else {
-            Log.e("Camera COmponent", "Couldn't find any suitable preview size");
-            return choices[0];
-        }
-    }
     public void setAutoFlash(CaptureRequest.Builder requestBuilder) {
         if (this.flashSupported) {
             requestBuilder.set(CaptureRequest.CONTROL_AE_MODE,
@@ -264,9 +260,8 @@ public class CameraAPI21 implements CameraAPI{
     @Override
     public void stopCamera() {
         cameraOpenCloseLock.release();
-        if (null != mCaptureSession) {
-            mCaptureSession.close();
-            mCaptureSession = null;
+        if (this.cameraPreviewCaptureHandler != null) {
+            this.cameraPreviewCaptureHandler.stopCapture();
         }
         if (this.camera != null) {
             this.camera.close();
@@ -284,9 +279,6 @@ public class CameraAPI21 implements CameraAPI{
         this.backgroundHandler = new Handler(this.backgroundThread.getLooper());
     }
 
-    /**
-     * Stops the background thread and its {@link Handler}.
-     */
     private void stopBackgroundThread() {
         if(this.backgroundThread != null) {
             this.backgroundThread.quitSafely();
@@ -330,6 +322,6 @@ public class CameraAPI21 implements CameraAPI{
     }
 
     public int getCameraOrientation(){
-        return this.cameraSensorOrientaiton;
+        return this.cameraSensorOrientation;
     }
 }

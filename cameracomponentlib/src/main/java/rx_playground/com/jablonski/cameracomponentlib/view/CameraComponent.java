@@ -1,21 +1,23 @@
-package rx_playground.com.jablonski.cameracomponentlib;
+package rx_playground.com.jablonski.cameracomponentlib.view;
 
 import android.app.Activity;
 import android.content.Context;
 import android.util.AttributeSet;
-import android.view.SurfaceView;
 import android.view.TextureView;
 import android.widget.ImageButton;
 import android.widget.RelativeLayout;
 
 import butterknife.BindView;
 import butterknife.ButterKnife;
+import rx_playground.com.jablonski.cameracomponentlib.R2;
+import rx_playground.com.jablonski.cameracomponentlib.view.managers.CameraManager;
+import rx_playground.com.jablonski.cameracomponentlib.R;
 
 /**
  * Created by yabol on 10.06.2017.
  */
 
-public class CameraComponent extends RelativeLayout implements CameraAPI {
+public class CameraComponent extends RelativeLayout {
     private Activity activity;
     private CameraManager manager;
 
@@ -25,13 +27,6 @@ public class CameraComponent extends RelativeLayout implements CameraAPI {
     ImageButton photoButotn;
     @BindView(R2.id.switchButton)
     ImageButton switchCameraButton;
-
-    public static CameraComponent getInstance(Activity activity){
-        CameraComponent component = new CameraComponent(activity);
-        component.setActivity(activity);
-
-        return component;
-    }
 
 
     public CameraComponent(Context context) {
@@ -49,42 +44,40 @@ public class CameraComponent extends RelativeLayout implements CameraAPI {
         init();
     }
 
-    public void setActivity(Activity activity){
+    public void setActivity(Activity activity) {
         this.activity = activity;
-        this.manager = new CameraManager(activity);
+        this.manager = new CameraManager(activity, this.cameraPreview);
     }
 
 
-    private void init(){
+    private void init() {
         inflate(getContext(), R.layout.camera_component, this);
 
         ButterKnife.bind(this);
 
     }
 
-    @Override
     public void takePhoto() {
-        if(this.manager != null){
+        if (this.manager != null) {
             this.manager.takePhoto();
         }
     }
 
-    public void startCamera(){
-        if(this.manager != null){
+
+    public void startCamera() {
+        if (this.manager != null) {
             this.manager.startCamera();
         }
     }
 
-    @Override
     public void stopCamera() {
-        if(this.manager != null){
+        if (this.manager != null) {
             this.manager.stopCamera();
         }
     }
 
-    @Override
     public void changeCamera() {
-        if(this.manager != null){
+        if (this.manager != null) {
             this.manager.changeCamera();
         }
     }

@@ -1,4 +1,4 @@
-package rx_playground.com.jablonski.cameracomponentlib;
+package rx_playground.com.jablonski.cameracomponentlib.view.helper;
 
 import android.graphics.Matrix;
 import android.graphics.RectF;
@@ -6,6 +6,8 @@ import android.os.Build;
 import android.support.annotation.RequiresApi;
 import android.util.Size;
 import android.view.Surface;
+
+import rx_playground.com.jablonski.cameracomponentlib.view.CameraAPI21;
 
 /**
  * Created by yabol on 12.06.2017.
