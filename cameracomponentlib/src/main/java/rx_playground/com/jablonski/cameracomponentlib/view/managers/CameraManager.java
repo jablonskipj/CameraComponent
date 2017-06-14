@@ -4,6 +4,7 @@ import android.app.Activity;
 import android.os.Build;
 import android.view.TextureView;
 
+import rx_playground.com.jablonski.cameracomponentlib.view.AutoFitTextureView;
 import rx_playground.com.jablonski.cameracomponentlib.view.CameraAPI21;
 import rx_playground.com.jablonski.cameracomponentlib.view.interfaces.CameraAPI;
 
@@ -13,9 +14,9 @@ import rx_playground.com.jablonski.cameracomponentlib.view.interfaces.CameraAPI;
 
 public class CameraManager {
     private CameraAPI camera;
-    private TextureView textureView;
+    private AutoFitTextureView textureView;
 
-    public CameraManager(Activity activity, TextureView cameraPreview){
+    public CameraManager(Activity activity, AutoFitTextureView cameraPreview){
         this.textureView = cameraPreview;
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
             this.camera = new CameraAPI21(activity, cameraPreview);

@@ -22,7 +22,7 @@ public class CameraComponent extends RelativeLayout {
     private CameraManager manager;
 
     @BindView(R2.id.cameraPreview)
-    TextureView cameraPreview;
+    AutoFitTextureView cameraPreview;
     @BindView(R2.id.photoButton)
     ImageButton photoButotn;
     @BindView(R2.id.switchButton)

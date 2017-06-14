@@ -4,6 +4,7 @@ import android.Manifest;
 import android.app.Activity;
 import android.content.Context;
 import android.content.pm.PackageManager;
+import android.content.res.Configuration;
 import android.graphics.ImageFormat;
 import android.graphics.Point;
 import android.graphics.SurfaceTexture;
@@ -45,7 +46,7 @@ public class CameraAPI21 implements CameraAPI {
     private HandlerThread backgroundThread;
     private Handler backgroundHandler;
     private Semaphore cameraOpenCloseLock = new Semaphore(1);
-    private TextureView cameraPreview;
+    private AutoFitTextureView cameraPreview;
     private ImageReader reader;
     private Size cameraPreviewSize;
     private boolean flashSupported;
@@ -96,7 +97,7 @@ public class CameraAPI21 implements CameraAPI {
 
     };
 
-    public CameraAPI21(Activity activity, TextureView cameraPreview){
+    public CameraAPI21(Activity activity, AutoFitTextureView cameraPreview){
         this.activity = activity;
         this.manager = (CameraManager) activity.getSystemService(Context.CAMERA_SERVICE);
         this.cameraPreview = cameraPreview;
@@ -220,9 +221,25 @@ public class CameraAPI21 implements CameraAPI {
         if (maxPreviewHeight > MAX_PREVIEW_HEIGHT) {
             maxPreviewHeight = MAX_PREVIEW_HEIGHT;
         }
+
+        setCameraAspectRatio();
+
         return new OptimalPreviewSizeEvaluator().chooseOptimalSize(map.getOutputSizes(SurfaceTexture.class),
                 rotatedPreviewWidth, rotatedPreviewHeight, maxPreviewWidth,
                 maxPreviewHeight, largest);
+    }
+
+    private void setCameraAspectRatio(){
+        int orientation = this.activity.getResources().getConfiguration().orientation;
+        if(this.cameraPreviewSize != null) {
+            if (orientation == Configuration.ORIENTATION_LANDSCAPE) {
+                this.cameraPreview.setAspectRatio(
+                        this.cameraPreviewSize.getWidth(), this.cameraPreviewSize.getHeight());
+            } else {
+                this.cameraPreview.setAspectRatio(
+                        this.cameraPreviewSize.getHeight(), this.cameraPreviewSize.getWidth());
+            }
+        }
     }
 
     private boolean isDimensionSwapped(CameraCharacteristics characteristics){
