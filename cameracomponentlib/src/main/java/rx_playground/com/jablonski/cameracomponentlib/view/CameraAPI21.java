@@ -13,6 +13,7 @@ import android.hardware.camera2.CameraManager;
 import android.hardware.camera2.params.StreamConfigurationMap;
 import android.media.ImageReader;
 import android.os.Build;
+import android.os.Environment;
 import android.os.Handler;
 import android.os.HandlerThread;
 import android.support.annotation.NonNull;
@@ -23,16 +24,19 @@ import android.util.Size;
 import android.view.Surface;
 import android.view.TextureView;
 
+import java.io.File;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.concurrent.Semaphore;
 import java.util.concurrent.TimeUnit;
 
 import rx_playground.com.jablonski.cameracomponentlib.view.helper.CameraPreviewCapture;
+import rx_playground.com.jablonski.cameracomponentlib.view.helper.ImageSaver;
 import rx_playground.com.jablonski.cameracomponentlib.view.helper.OptimalPreviewSizeEvaluator;
 import rx_playground.com.jablonski.cameracomponentlib.view.helper.PreviewTransformer;
 import rx_playground.com.jablonski.cameracomponentlib.view.helper.SizeAreaComparator;
 import rx_playground.com.jablonski.cameracomponentlib.view.interfaces.CameraAPI;
+import rx_playground.com.jablonski.cameracomponentlib.view.interfaces.ImageResultCallback;
 
 /**
  * Created by yabol on 10.06.2017.
@@ -42,7 +46,7 @@ public class CameraAPI21 implements CameraAPI {
     private Activity activity;
     private CameraDevice camera;
     private CameraManager manager;
-    private String cameraId;
+    private String cameraId = BACK_CAMERA;
     private HandlerThread backgroundThread;
     private Handler backgroundHandler;
     private Semaphore cameraOpenCloseLock = new Semaphore(1);
@@ -53,6 +57,10 @@ public class CameraAPI21 implements CameraAPI {
     private int displayRotation;
     private int cameraSensorOrientation;
     private CameraPreviewCapture cameraPreviewCaptureHandler;
+    private String finalImagePath;
+    private ImageResultCallback imageCapturedCallback;
+    public static final String FACING_CAMERA = "1";
+    public static final String BACK_CAMERA = "0";
 
 
     private static final int MAX_PREVIEW_WIDTH = 1920;
@@ -92,7 +100,10 @@ public class CameraAPI21 implements CameraAPI {
 
         @Override
         public void onImageAvailable(ImageReader reader) {
-            //backgroundHandler.post(new ImageSaver(reader.acquireNextImage(), mFile));
+            File file = new File(finalImagePath + "/" + System.currentTimeMillis() + ".jpg");
+            ImageSaver saver = new ImageSaver(reader.acquireNextImage(), file);
+            saver.setCallback(imageCapturedCallback);
+            backgroundHandler.post(saver);
         }
 
     };
@@ -101,11 +112,13 @@ public class CameraAPI21 implements CameraAPI {
         this.activity = activity;
         this.manager = (CameraManager) activity.getSystemService(Context.CAMERA_SERVICE);
         this.cameraPreview = cameraPreview;
+        this.finalImagePath = activity.getFilesDir().getAbsolutePath() + "/pictures";
     }
     @Override
     public void takePhoto() {
         this.cameraPreviewCaptureHandler.lockFocus();
     }
+
 
     @Override
     public void startCamera(int width, int height) {
@@ -157,11 +170,11 @@ public class CameraAPI21 implements CameraAPI {
     }
 
     private void setUpCamera(int width, int height){
-        CameraManager manager = (CameraManager) this.activity.getSystemService(Context.CAMERA_SERVICE);
         try {
-            for(String cameraId : manager.getCameraIdList()){
+            //for(String cameraId : manager.getCameraIdList()){
+                Log.d("CameraComponent", "Camera id: " + cameraId);
                 configureSingleCamera(cameraId, width, height);
-            }
+            //}
         } catch (CameraAccessException e) {
             e.printStackTrace();
         }
@@ -311,7 +324,18 @@ public class CameraAPI21 implements CameraAPI {
 
     @Override
     public void changeCamera() {
+        stopCamera();
+        this.cameraId = this.cameraId == BACK_CAMERA ? FACING_CAMERA : BACK_CAMERA;
+        startCamera(this.cameraPreview.getWidth(), this.cameraPreview.getHeight());
+    }
 
+    @Override
+    public void setImageCaptureListener(ImageResultCallback callback) {
+        this.imageCapturedCallback = callback;
+    }
+
+    public void setFinalImagePath(String path){
+        this.finalImagePath = path;
     }
 
     public Handler getHandler(){
@@ -340,5 +364,9 @@ public class CameraAPI21 implements CameraAPI {
 
     public int getCameraOrientation(){
         return this.cameraSensorOrientation;
+    }
+
+    public void setImageCapturedCallback(ImageResultCallback imageCapturedCallback) {
+        this.imageCapturedCallback = imageCapturedCallback;
     }
 }

@@ -4,12 +4,15 @@ import android.app.Activity;
 import android.content.Context;
 import android.util.AttributeSet;
 import android.view.TextureView;
+import android.view.View;
+import android.view.ViewGroup;
 import android.widget.ImageButton;
 import android.widget.RelativeLayout;
 
 import butterknife.BindView;
 import butterknife.ButterKnife;
 import rx_playground.com.jablonski.cameracomponentlib.R2;
+import rx_playground.com.jablonski.cameracomponentlib.view.interfaces.ImageResultCallback;
 import rx_playground.com.jablonski.cameracomponentlib.view.managers.CameraManager;
 import rx_playground.com.jablonski.cameracomponentlib.R;
 
@@ -63,6 +66,14 @@ public class CameraComponent extends RelativeLayout {
         }
     }
 
+    public void setPhotoButton(ImageButton button){
+        ViewGroup.LayoutParams params = this.photoButotn.getLayoutParams();
+        removeView(this.photoButotn);
+        this.photoButotn = button;
+        this.photoButotn.setLayoutParams(params);
+        addView(button);
+    }
+
 
     public void startCamera() {
         if (this.manager != null) {
@@ -79,6 +90,12 @@ public class CameraComponent extends RelativeLayout {
     public void changeCamera() {
         if (this.manager != null) {
             this.manager.changeCamera();
+        }
+    }
+
+    public void setImageCapturedListener(ImageResultCallback listener){
+        if(manager != null) {
+            this.manager.setImageCapturedListener(listener);
         }
     }
 

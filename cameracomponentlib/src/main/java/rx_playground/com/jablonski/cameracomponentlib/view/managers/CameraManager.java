@@ -7,6 +7,7 @@ import android.view.TextureView;
 import rx_playground.com.jablonski.cameracomponentlib.view.AutoFitTextureView;
 import rx_playground.com.jablonski.cameracomponentlib.view.CameraAPI21;
 import rx_playground.com.jablonski.cameracomponentlib.view.interfaces.CameraAPI;
+import rx_playground.com.jablonski.cameracomponentlib.view.interfaces.ImageResultCallback;
 
 /**
  * Created by yabol on 10.06.2017.
@@ -39,6 +40,10 @@ public class CameraManager {
 
     public void takePhoto(){
         this.camera.takePhoto();
+    }
+
+    public void setImageCapturedListener(ImageResultCallback callback){
+        this.camera.setImageCaptureListener(callback);
     }
 
 

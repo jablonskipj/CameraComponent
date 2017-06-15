@@ -9,4 +9,5 @@ public interface CameraAPI {
     void startCamera(int width, int height);
     void stopCamera();
     void changeCamera();
+    void setImageCaptureListener(ImageResultCallback callback);
 }
