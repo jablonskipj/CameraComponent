@@ -3,9 +3,6 @@ package rx_playground.com.jablonski.cameracomponentlib.view;
 import android.app.Activity;
 import android.content.Context;
 import android.util.AttributeSet;
-import android.view.TextureView;
-import android.view.View;
-import android.view.ViewGroup;
 import android.widget.ImageButton;
 import android.widget.RelativeLayout;
 
@@ -15,6 +12,8 @@ import rx_playground.com.jablonski.cameracomponentlib.R2;
 import rx_playground.com.jablonski.cameracomponentlib.view.interfaces.ImageResultCallback;
 import rx_playground.com.jablonski.cameracomponentlib.view.managers.CameraManager;
 import rx_playground.com.jablonski.cameracomponentlib.R;
+import rx_playground.com.jablonski.cameracomponentlib.view.positioning.ButtonPlacement;
+import rx_playground.com.jablonski.cameracomponentlib.view.positioning.DefaultButtonsPlacement;
 
 /**
  * Created by yabol on 10.06.2017.
@@ -23,6 +22,7 @@ import rx_playground.com.jablonski.cameracomponentlib.R;
 public class CameraComponent extends RelativeLayout {
     private Activity activity;
     private CameraManager manager;
+    private ButtonPlacement placement;
 
     @BindView(R2.id.cameraPreview)
     AutoFitTextureView cameraPreview;
@@ -58,6 +58,10 @@ public class CameraComponent extends RelativeLayout {
 
         ButterKnife.bind(this);
 
+        this.placement = new DefaultButtonsPlacement();
+        this.photoButotn.setLayoutParams(this.placement.photoButtonPosition());
+        this.switchCameraButton.setLayoutParams(this.placement.changeCameraButtonPosition());
+
     }
 
     public void takePhoto() {
@@ -67,11 +71,21 @@ public class CameraComponent extends RelativeLayout {
     }
 
     public void setPhotoButton(ImageButton button){
-        ViewGroup.LayoutParams params = this.photoButotn.getLayoutParams();
         removeView(this.photoButotn);
         this.photoButotn = button;
-        this.photoButotn.setLayoutParams(params);
+        this.photoButotn.setLayoutParams(this.placement.photoButtonPosition());
         addView(button);
+    }
+
+    public void setChangeCameraButton(ImageButton button){
+        removeView(this.photoButotn);
+        this.photoButotn = button;
+        this.photoButotn.setLayoutParams(this.placement.changeCameraButtonPosition());
+        addView(button);
+    }
+
+    public void setPlacement(ButtonPlacement placement){
+        this.placement = placement;
     }
 
 

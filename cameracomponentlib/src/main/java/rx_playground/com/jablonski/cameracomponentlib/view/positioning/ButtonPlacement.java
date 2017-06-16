@@ -2,12 +2,13 @@ package rx_playground.com.jablonski.cameracomponentlib.view.positioning;
 
 import android.support.v4.view.ViewPager;
 import android.view.ViewGroup;
+import android.widget.RelativeLayout;
 
 /**
  * Created by yabol on 15.06.2017.
  */
 
-public interface ButtonPositionInterface {
+public interface ButtonPlacement {
     /**
      * CameraComponent uses relative layout so to relocate buttons
      * there is a possibility to relocate buttons using standard
@@ -19,6 +20,6 @@ public interface ButtonPositionInterface {
      *
      * Fro your own buttons you need to use your id's
      */
-    ViewGroup.LayoutParams photoButtonPosition();
-    ViewGroup.LayoutParams changeCameraButtonPosition();
+    RelativeLayout.LayoutParams photoButtonPosition();
+    RelativeLayout.LayoutParams changeCameraButtonPosition();
 }
