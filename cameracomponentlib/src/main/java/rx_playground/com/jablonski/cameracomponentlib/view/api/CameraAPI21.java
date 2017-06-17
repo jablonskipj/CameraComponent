@@ -24,6 +24,7 @@ import android.view.Surface;
 import android.view.TextureView;
 
 import java.io.File;
+import java.io.IOException;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.concurrent.Semaphore;
@@ -99,10 +100,20 @@ public class CameraAPI21 implements CameraAPI {
 
         @Override
         public void onImageAvailable(ImageReader reader) {
-            File file = new File(finalImagePath + "/" + System.currentTimeMillis() + ".jpg");
-            ImageSaver saver = new ImageSaver(reader.acquireNextImage(), file);
-            saver.setCallback(imageCapturedCallback);
-            backgroundHandler.post(saver);
+            File file = new File(finalImagePath);
+            if(!file.isDirectory()) {
+                file.mkdirs();
+            }
+            try {
+                file = new File(finalImagePath  + "/" + System.currentTimeMillis() + ".jpg");
+                file.createNewFile();
+
+                ImageSaver saver = new ImageSaver(reader, file);
+                saver.setCallback(imageCapturedCallback);
+                backgroundHandler.post(saver);
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
         }
 
     };
@@ -193,10 +204,7 @@ public class CameraAPI21 implements CameraAPI {
                 Arrays.asList(map.getOutputSizes(ImageFormat.JPEG)),
                 new SizeAreaComparator());
 
-        this.reader = ImageReader.newInstance(largest.getWidth(), largest.getHeight(),
-                ImageFormat.JPEG, 1);
-        this.reader.setOnImageAvailableListener(
-                this.imageCapturedListener, this.backgroundHandler);
+        this.reader = prepareImageReader(largest);
 
         this.displayRotation = activity.getWindowManager().getDefaultDisplay().getRotation();
 
@@ -207,6 +215,15 @@ public class CameraAPI21 implements CameraAPI {
         this.flashSupported = available == null ? false : available;
 
         this.cameraId = cameraId;
+    }
+
+    ImageReader prepareImageReader(Size size){
+        ImageReader result = ImageReader.newInstance(size.getWidth(), size.getHeight(),
+                ImageFormat.JPEG, 1);
+        result.setOnImageAvailableListener(
+                this.imageCapturedListener, this.backgroundHandler);
+
+        return result;
     }
 
     private Size getCameraPreviewSize(CameraCharacteristics characteristics, StreamConfigurationMap map, Size largest, int width, int height) {

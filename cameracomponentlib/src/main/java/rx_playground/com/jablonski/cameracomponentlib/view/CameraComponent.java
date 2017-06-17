@@ -2,6 +2,10 @@ package rx_playground.com.jablonski.cameracomponentlib.view;
 
 import android.app.Activity;
 import android.content.Context;
+import android.os.Bundle;
+import android.os.Handler;
+import android.os.Message;
+import android.text.TextUtils;
 import android.util.AttributeSet;
 import android.view.View;
 import android.widget.ImageButton;
@@ -10,6 +14,7 @@ import android.widget.RelativeLayout;
 import butterknife.BindView;
 import butterknife.ButterKnife;
 import rx_playground.com.jablonski.cameracomponentlib.R2;
+import rx_playground.com.jablonski.cameracomponentlib.view.helper.ResourceUtils;
 import rx_playground.com.jablonski.cameracomponentlib.view.interfaces.ImageResultCallback;
 import rx_playground.com.jablonski.cameracomponentlib.view.managers.CameraManager;
 import rx_playground.com.jablonski.cameracomponentlib.R;
@@ -25,6 +30,19 @@ public class CameraComponent extends RelativeLayout {
     private CameraManager manager;
     private ButtonPlacement placement;
     private OnClickListener buttonClickListener;
+    private OnClickListener photoTakenListener;
+    private ImageResultCallback imageResultCallback;
+    private String imagePath;
+    private Handler handler = new Handler(){
+        @Override
+        public void handleMessage(Message msg) {
+            super.handleMessage(msg);
+            Bundle data = msg.getData();
+            if(data != null) {
+                setPhotoTaken(data.getString("imagePath"));
+            }
+        }
+    };
 
     @BindView(R2.id.cameraPreview)
     AutoFitTextureView cameraPreview;
@@ -52,6 +70,16 @@ public class CameraComponent extends RelativeLayout {
     public void setActivity(Activity activity) {
         this.activity = activity;
         this.manager = new CameraManager(activity, this.cameraPreview);
+        this.manager.setImageCapturedListener(new ImageResultCallback() {
+            @Override
+            public void onImageCaptured(String imagePath) {
+                Bundle data = new Bundle();
+                data.putString("imagePath", imagePath);
+                Message message = new Message();
+                message.setData(data);
+                handler.sendMessage(message);
+            }
+        });
     }
 
 
@@ -63,19 +91,37 @@ public class CameraComponent extends RelativeLayout {
         this.placement = new DefaultButtonsPlacement();
         this.photoButton.setLayoutParams(this.placement.photoButtonPosition());
         this.switchCameraButton.setLayoutParams(this.placement.changeCameraButtonPosition());
+        initiateListeners();
+
+        this.photoButton.setOnClickListener(this.buttonClickListener);
+        this.switchCameraButton.setOnClickListener(this.buttonClickListener);
+    }
+
+    private void initiateListeners(){
         this.buttonClickListener = new OnClickListener() {
             @Override
             public void onClick(View v) {
                 int i = v.getId();
                 if (i == R.id.switchButton) {
-                    manager.changeCamera();
-                }else{
-                    manager.takePhoto();
+                    changeCamera();
+                }else if (i == R.id.photoButton){
+                    takePhoto();
                 }
             }
         };
-        this.photoButton.setOnClickListener(this.buttonClickListener);
-        this.switchCameraButton.setOnClickListener(this.buttonClickListener);
+        this.photoTakenListener = new OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                int i = v.getId();
+                if (i == R.id.switchButton) {
+                    cancelPhotoTaken();
+                }else if (i == R.id.photoButton){
+                    if(imageResultCallback != null && !TextUtils.isEmpty(imagePath)){
+                        imageResultCallback.onImageCaptured(imagePath);
+                    }
+                }
+            }
+        };
     }
 
     public void takePhoto() {
@@ -127,9 +173,26 @@ public class CameraComponent extends RelativeLayout {
     }
 
     public void setImageCapturedListener(ImageResultCallback listener){
-        if(manager != null) {
-            this.manager.setImageCapturedListener(listener);
-        }
+        this.imageResultCallback = listener;
     }
 
+    public void setPhotoTaken(String imagePath){
+        this.imagePath = imagePath;
+        this.photoButton.setOnClickListener(this.photoTakenListener);
+        this.switchCameraButton.setOnClickListener(this.photoTakenListener);
+        this.photoButton.setImageDrawable(ResourceUtils.getDrawable(getContext(), R.drawable.ic_submit));
+        this.switchCameraButton.setImageDrawable(ResourceUtils.getDrawable(getContext(), R.drawable.ic_cancel));
+        //todo change resources
+    }
+
+    private void cancelPhotoTaken(){
+        stopCamera();
+        startCamera();
+        this.imagePath = "";
+        this.photoButton.setOnClickListener(this.buttonClickListener);
+        this.switchCameraButton.setOnClickListener(this.buttonClickListener);
+        this.photoButton.setImageDrawable(ResourceUtils.getDrawable(getContext(), R.drawable.ic_take_photo));
+        this.switchCameraButton.setImageDrawable(ResourceUtils.getDrawable(getContext(), R.drawable.ic_switch_camera));
+        //todo chang eresources
+    }
 }
