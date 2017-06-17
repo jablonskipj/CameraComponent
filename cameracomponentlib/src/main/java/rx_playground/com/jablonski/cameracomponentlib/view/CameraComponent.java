@@ -195,4 +195,8 @@ public class CameraComponent extends RelativeLayout {
         this.switchCameraButton.setImageDrawable(ResourceUtils.getDrawable(getContext(), R.drawable.ic_switch_camera));
         //todo chang eresources
     }
+
+    static class PhotoHandler extends Handler{
+
+    }
 }
