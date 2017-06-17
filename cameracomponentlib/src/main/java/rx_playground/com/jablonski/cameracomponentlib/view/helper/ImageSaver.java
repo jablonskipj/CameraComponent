@@ -1,6 +1,7 @@
 package rx_playground.com.jablonski.cameracomponentlib.view.helper;
 
 import android.media.Image;
+import android.media.ImageReader;
 import android.os.Build;
 import android.support.annotation.RequiresApi;
 
@@ -16,12 +17,12 @@ import rx_playground.com.jablonski.cameracomponentlib.view.interfaces.ImageResul
  */
 
 public class ImageSaver implements Runnable {
-    private Image image;
+    private ImageReader imageReader;
     private File file;
     private ImageResultCallback callback;
 
-    public ImageSaver(Image image, File file){
-        this.image = image;
+    public ImageSaver(ImageReader image, File file){
+        this.imageReader = image;
         this.file = file;
     }
 
@@ -35,7 +36,8 @@ public class ImageSaver implements Runnable {
 
     @RequiresApi(api = Build.VERSION_CODES.KITKAT)
     private void saveImageApi19(){
-        ByteBuffer buffer = this.image.getPlanes()[0].getBuffer();
+        Image image = this.imageReader.acquireNextImage();
+        ByteBuffer buffer = image.getPlanes()[0].getBuffer();
         byte[] bytes = new byte[buffer.remaining()];
         buffer.get(bytes);
         FileOutputStream output = null;
@@ -48,7 +50,7 @@ public class ImageSaver implements Runnable {
         } catch (IOException e) {
             e.printStackTrace();
         } finally {
-            this.image.close();
+            image.close();
             if (null != output) {
                 try {
                     output.close();
@@ -56,6 +58,7 @@ public class ImageSaver implements Runnable {
                     e.printStackTrace();
                 }
             }
+            this.imageReader.close();
         }
     }
 

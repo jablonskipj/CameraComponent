@@ -143,26 +143,27 @@ public class CameraPreviewCapture {
     }
 
     public void unlockCameraFocus(){
-        try {
-            this.previewBuilder.set(CaptureRequest.CONTROL_AF_TRIGGER,
-                    CameraMetadata.CONTROL_AF_TRIGGER_CANCEL);
-            this.cameraAPI.setAutoFlash(this.previewBuilder);
-            this.captureSession.capture(this.previewBuilder.build(), this.captureCallback,
-                    this.cameraAPI.getHandler());
-            this.state = STATE_PREVIEW;
-            this.captureSession.setRepeatingRequest(this.captureRequest, this.captureCallback,
-                    this.cameraAPI.getHandler());
-        } catch (CameraAccessException e) {
-            e.printStackTrace();
-        }
+        this.cameraAPI.stopCamera();
+        this.state = STATE_PREVIEW;
+        this.cameraAPI.startCamera(this.cameraAPI.getTextureView().getWidth(), this.cameraAPI.getTextureView().getHeight());
+//        try {
+//            this.previewBuilder.set(CaptureRequest.CONTROL_AF_TRIGGER,
+//                    CameraMetadata.CONTROL_AF_TRIGGER_CANCEL);
+//            this.cameraAPI.setAutoFlash(this.previewBuilder);
+//            this.captureSession.capture(this.previewBuilder.build(), this.captureCallback,
+//                    this.cameraAPI.getHandler());
+//            this.state = STATE_PREVIEW;
+//            this.captureSession.setRepeatingRequest(this.captureRequest, this.captureCallback,
+//                    this.cameraAPI.getHandler());
+//        } catch (CameraAccessException e) {
+//            e.printStackTrace();
+//        }
     }
 
     public void lockFocus() {
         try {
-            // This is how to tell the camera to lock focus.
             this.previewBuilder.set(CaptureRequest.CONTROL_AF_TRIGGER,
                     CameraMetadata.CONTROL_AF_TRIGGER_START);
-            // Tell #mCaptureCallback to wait for the lock.
             this.state = STATE_WAITING_LOCK;
             this.captureSession.capture(this.previewBuilder.build(), this.captureCallback,
                     this.cameraAPI.getHandler());
@@ -200,19 +201,18 @@ public class CameraPreviewCapture {
 
             captureBuilder.set(CaptureRequest.JPEG_ORIENTATION, getOrientation(this.cameraAPI.getDisplayRotation()));
 
-            CameraCaptureSession.CaptureCallback CaptureCallback
+            CameraCaptureSession.CaptureCallback captureCallback
                     = new CameraCaptureSession.CaptureCallback() {
 
                 @Override
                 public void onCaptureCompleted(@NonNull CameraCaptureSession session,
                                                @NonNull CaptureRequest request,
                                                @NonNull TotalCaptureResult result) {
-                    unlockCameraFocus();
                 }
             };
 
             this.captureSession.stopRepeating();
-            this.captureSession.capture(captureBuilder.build(), CaptureCallback, null);
+            this.captureSession.capture(captureBuilder.build(), captureCallback, null);
         } catch (CameraAccessException e) {
             e.printStackTrace();
         }
