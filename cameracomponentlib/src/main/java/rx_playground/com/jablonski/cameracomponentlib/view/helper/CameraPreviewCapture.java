@@ -16,7 +16,7 @@ import android.view.Surface;
 
 import java.util.Arrays;
 
-import rx_playground.com.jablonski.cameracomponentlib.view.CameraAPI21;
+import rx_playground.com.jablonski.cameracomponentlib.view.api.CameraAPI21;
 
 /**
  * Created by yabol on 10.06.2017.

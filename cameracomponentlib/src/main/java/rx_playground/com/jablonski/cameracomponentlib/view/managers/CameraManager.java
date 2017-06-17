@@ -2,11 +2,10 @@ package rx_playground.com.jablonski.cameracomponentlib.view.managers;
 
 import android.app.Activity;
 import android.os.Build;
-import android.view.TextureView;
 
 import rx_playground.com.jablonski.cameracomponentlib.view.AutoFitTextureView;
-import rx_playground.com.jablonski.cameracomponentlib.view.CameraAPI21;
-import rx_playground.com.jablonski.cameracomponentlib.view.interfaces.CameraAPI;
+import rx_playground.com.jablonski.cameracomponentlib.view.api.CameraAPI21;
+import rx_playground.com.jablonski.cameracomponentlib.view.api.CameraAPI;
 import rx_playground.com.jablonski.cameracomponentlib.view.interfaces.ImageResultCallback;
 
 /**

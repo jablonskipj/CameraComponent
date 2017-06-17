@@ -7,7 +7,7 @@ import android.support.annotation.RequiresApi;
 import android.util.Size;
 import android.view.Surface;
 
-import rx_playground.com.jablonski.cameracomponentlib.view.CameraAPI21;
+import rx_playground.com.jablonski.cameracomponentlib.view.api.CameraAPI21;
 
 /**
  * Created by yabol on 12.06.2017.

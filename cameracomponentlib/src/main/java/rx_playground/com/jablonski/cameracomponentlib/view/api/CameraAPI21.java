@@ -1,4 +1,4 @@
-package rx_playground.com.jablonski.cameracomponentlib.view;
+package rx_playground.com.jablonski.cameracomponentlib.view.api;
 
 import android.Manifest;
 import android.app.Activity;
@@ -13,7 +13,6 @@ import android.hardware.camera2.CameraManager;
 import android.hardware.camera2.params.StreamConfigurationMap;
 import android.media.ImageReader;
 import android.os.Build;
-import android.os.Environment;
 import android.os.Handler;
 import android.os.HandlerThread;
 import android.support.annotation.NonNull;
@@ -30,12 +29,12 @@ import java.util.Collections;
 import java.util.concurrent.Semaphore;
 import java.util.concurrent.TimeUnit;
 
+import rx_playground.com.jablonski.cameracomponentlib.view.AutoFitTextureView;
 import rx_playground.com.jablonski.cameracomponentlib.view.helper.CameraPreviewCapture;
 import rx_playground.com.jablonski.cameracomponentlib.view.helper.ImageSaver;
 import rx_playground.com.jablonski.cameracomponentlib.view.helper.OptimalPreviewSizeEvaluator;
 import rx_playground.com.jablonski.cameracomponentlib.view.helper.PreviewTransformer;
 import rx_playground.com.jablonski.cameracomponentlib.view.helper.SizeAreaComparator;
-import rx_playground.com.jablonski.cameracomponentlib.view.interfaces.CameraAPI;
 import rx_playground.com.jablonski.cameracomponentlib.view.interfaces.ImageResultCallback;
 
 /**

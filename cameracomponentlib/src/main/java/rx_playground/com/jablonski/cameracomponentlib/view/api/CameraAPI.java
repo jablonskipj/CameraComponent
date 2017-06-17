@@ -1,4 +1,6 @@
-package rx_playground.com.jablonski.cameracomponentlib.view.interfaces;
+package rx_playground.com.jablonski.cameracomponentlib.view.api;
+
+import rx_playground.com.jablonski.cameracomponentlib.view.interfaces.ImageResultCallback;
 
 /**
  * Created by yabol on 10.06.2017.
