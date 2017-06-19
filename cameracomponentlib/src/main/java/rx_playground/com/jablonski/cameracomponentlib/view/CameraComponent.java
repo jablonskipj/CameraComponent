@@ -33,16 +33,7 @@ public class CameraComponent extends RelativeLayout {
     private OnClickListener photoTakenListener;
     private ImageResultCallback imageResultCallback;
     private String imagePath;
-    private Handler handler = new Handler(){
-        @Override
-        public void handleMessage(Message msg) {
-            super.handleMessage(msg);
-            Bundle data = msg.getData();
-            if(data != null) {
-                setPhotoTaken(data.getString("imagePath"));
-            }
-        }
-    };
+    private Handler handler;
 
     @BindView(R2.id.cameraPreview)
     AutoFitTextureView cameraPreview;
@@ -80,6 +71,7 @@ public class CameraComponent extends RelativeLayout {
                 handler.sendMessage(message);
             }
         });
+        this.handler = new PhotoHandler(this);
     }
 
 
@@ -182,7 +174,6 @@ public class CameraComponent extends RelativeLayout {
         this.switchCameraButton.setOnClickListener(this.photoTakenListener);
         this.photoButton.setImageDrawable(ResourceUtils.getDrawable(getContext(), R.drawable.ic_submit));
         this.switchCameraButton.setImageDrawable(ResourceUtils.getDrawable(getContext(), R.drawable.ic_cancel));
-        //todo change resources
     }
 
     private void cancelPhotoTaken(){
@@ -193,10 +184,21 @@ public class CameraComponent extends RelativeLayout {
         this.switchCameraButton.setOnClickListener(this.buttonClickListener);
         this.photoButton.setImageDrawable(ResourceUtils.getDrawable(getContext(), R.drawable.ic_take_photo));
         this.switchCameraButton.setImageDrawable(ResourceUtils.getDrawable(getContext(), R.drawable.ic_switch_camera));
-        //todo chang eresources
     }
 
-    static class PhotoHandler extends Handler{
+    private class PhotoHandler extends Handler{
+        CameraComponent component;
+        public PhotoHandler(CameraComponent component){
+            this.component = component;
+        }
 
+        @Override
+        public void handleMessage(Message msg) {
+            super.handleMessage(msg);
+            Bundle data = msg.getData();
+            if(data != null) {
+                component.setPhotoTaken(data.getString("imagePath"));
+            }
+        }
     }
 }
