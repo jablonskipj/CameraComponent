@@ -7,6 +7,12 @@
         android:id="@+id/cameraPreview"
         android:layout_width="match_parent"
         android:layout_height="match_parent" />
+    
+
+    <SurfaceView
+        android:id="@+id/oldApiPreview"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent" />
 
     <View
         android:id="@+id/centerElement"

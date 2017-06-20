@@ -4,8 +4,10 @@ import android.app.Activity;
 import android.os.Build;
 
 import rx_playground.com.jablonski.cameracomponentlib.view.AutoFitTextureView;
+import rx_playground.com.jablonski.cameracomponentlib.view.CameraComponent;
 import rx_playground.com.jablonski.cameracomponentlib.view.api.CameraAPI21;
 import rx_playground.com.jablonski.cameracomponentlib.view.api.CameraAPI;
+import rx_playground.com.jablonski.cameracomponentlib.view.api.CameraOldApi;
 import rx_playground.com.jablonski.cameracomponentlib.view.interfaces.ImageResultCallback;
 
 /**
@@ -14,19 +16,39 @@ import rx_playground.com.jablonski.cameracomponentlib.view.interfaces.ImageResul
 
 public class CameraManager {
     private CameraAPI camera;
-    private AutoFitTextureView textureView;
+    private CameraComponent component;
 
-    public CameraManager(Activity activity, AutoFitTextureView cameraPreview){
-        this.textureView = cameraPreview;
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
-            this.camera = new CameraAPI21(activity, cameraPreview);
+    public CameraManager(Activity activity, CameraComponent component){
+        this.component = component;
+        if (Build.VERSION.SDK_INT > Build.VERSION_CODES.LOLLIPOP) {
+            this.camera = new CameraAPI21(activity, component.getNewAPiPreview());
         }else{
-            //todo implementation of camera for older API
+            this.component.setUpOldApiView();
+            this.camera = new CameraOldApi(this.component.getOldApiPreview());
         }
     }
 
     public void startCamera(){
-        this.camera.startCamera(this.textureView.getWidth(), this.textureView.getHeight());
+        this.camera.startCamera(getPreviewWidth(), getPreviewHeight());
+    }
+
+    private int getPreviewWidth(){
+        int width;
+        if (Build.VERSION.SDK_INT > Build.VERSION_CODES.LOLLIPOP) {
+            width = this.component.getNewAPiPreview().getWidth();
+        }else{
+            width = this.component.getOldApiPreview().getWidth();
+        }
+        return width;
+    }
+    private int getPreviewHeight(){
+        int height;
+        if (Build.VERSION.SDK_INT > Build.VERSION_CODES.LOLLIPOP) {
+            height = this.component.getNewAPiPreview().getWidth();
+        }else{
+            height = this.component.getOldApiPreview().getHeight();
+        }
+        return height;
     }
 
     public void stopCamera(){

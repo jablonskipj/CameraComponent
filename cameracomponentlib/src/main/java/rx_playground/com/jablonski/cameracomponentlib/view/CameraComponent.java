@@ -7,7 +7,9 @@ import android.os.Handler;
 import android.os.Message;
 import android.text.TextUtils;
 import android.util.AttributeSet;
+import android.view.SurfaceView;
 import android.view.View;
+import android.widget.FrameLayout;
 import android.widget.ImageButton;
 import android.widget.RelativeLayout;
 
@@ -41,6 +43,14 @@ public class CameraComponent extends RelativeLayout {
     ImageButton photoButton;
     @BindView(R2.id.switchButton)
     ImageButton switchCameraButton;
+    @BindView(R2.id.oldApiPreview)
+    SurfaceView oldApiPreview;
+
+    public static CameraComponent getInstance(Activity activity){
+        CameraComponent component = new CameraComponent(activity);
+        component.setActivity(activity);
+        return component;
+    }
 
 
     public CameraComponent(Context context) {
@@ -60,7 +70,7 @@ public class CameraComponent extends RelativeLayout {
 
     public void setActivity(Activity activity) {
         this.activity = activity;
-        this.manager = new CameraManager(activity, this.cameraPreview);
+        this.manager = new CameraManager(activity, this);
         this.manager.setImageCapturedListener(new ImageResultCallback() {
             @Override
             public void onImageCaptured(String imagePath) {
@@ -120,6 +130,11 @@ public class CameraComponent extends RelativeLayout {
         if (this.manager != null) {
             this.manager.takePhoto();
         }
+    }
+
+    public void setUpOldApiView(){
+        this.cameraPreview.setVisibility(GONE);
+        this.oldApiPreview.setVisibility(VISIBLE);
     }
 
 
@@ -200,5 +215,13 @@ public class CameraComponent extends RelativeLayout {
                 component.setPhotoTaken(data.getString("imagePath"));
             }
         }
+    }
+
+    public AutoFitTextureView getNewAPiPreview(){
+        return this.cameraPreview;
+    }
+
+    public SurfaceView getOldApiPreview(){
+        return this.oldApiPreview;
     }
 }
