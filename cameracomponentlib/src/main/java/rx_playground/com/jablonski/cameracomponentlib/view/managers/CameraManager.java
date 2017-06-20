@@ -24,7 +24,7 @@ public class CameraManager {
             this.camera = new CameraAPI21(activity, component.getNewAPiPreview());
         }else{
             this.component.setUpOldApiView();
-            this.camera = new CameraOldApi(this.component.getOldApiPreview());
+            this.camera = new CameraOldApi(activity, this.component.getOldApiPreview());
         }
     }
 

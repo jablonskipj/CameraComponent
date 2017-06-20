@@ -1,13 +1,13 @@
 package rx_playground.com.jablonski.cameracomponentlib.view.api;
 
+import android.app.Activity;
 import android.hardware.Camera;
+import android.view.Surface;
 import android.view.SurfaceHolder;
 import android.view.SurfaceView;
-import android.widget.FrameLayout;
 
 import java.io.IOException;
 
-import rx_playground.com.jablonski.cameracomponentlib.view.AutoFitTextureView;
 import rx_playground.com.jablonski.cameracomponentlib.view.interfaces.ImageResultCallback;
 
 /**
@@ -15,15 +15,16 @@ import rx_playground.com.jablonski.cameracomponentlib.view.interfaces.ImageResul
  */
 
 public class CameraOldApi implements CameraAPI, SurfaceHolder.Callback {
-    public static final int BACK_CAMERA = 0;
-    public static final int FRONT_CAMERA = 1;
     private Camera camera;
-    private int currentCamera = BACK_CAMERA;
+    private boolean frontCamera = false;
+    private int currentCamera;
     private SurfaceView cameraPreview;
     private SurfaceHolder holder;
+    private Activity activity;
     private ImageResultCallback callback;
 
-    public CameraOldApi(SurfaceView cameraPreview){
+    public CameraOldApi(Activity activity, SurfaceView cameraPreview){
+        this.activity = activity;
         this.cameraPreview = cameraPreview;
         this.holder = this.cameraPreview.getHolder();
         this.holder.addCallback(this);
@@ -36,20 +37,29 @@ public class CameraOldApi implements CameraAPI, SurfaceHolder.Callback {
     @Override
     public void startCamera(int width, int height) {
         setUpCamera();
+        if(this.camera != null && holder != null){
+            try {
+                this.camera.setPreviewDisplay(this.holder);
+                this.camera.startPreview();
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        }
     }
 
     @Override
     public void stopCamera() {
-        if(camera != null){
-            camera.stopPreview();
-            camera = null;
+        if(this.camera != null){
+            this.camera.stopPreview();
+            this.camera.release();
+            this.camera = null;
         }
     }
 
     @Override
     public void changeCamera() {
         stopCamera();
-        this.currentCamera = this.currentCamera == BACK_CAMERA ? FRONT_CAMERA : BACK_CAMERA;
+        this.currentCamera = getCameraId();
         startCamera(cameraPreview.getWidth(), cameraPreview.getHeight());
     }
 
@@ -60,7 +70,64 @@ public class CameraOldApi implements CameraAPI, SurfaceHolder.Callback {
 
     private void setUpCamera(){
         this.camera = getCameraInstance(this.currentCamera);
+        this.camera.setDisplayOrientation(getCameraOrientationDegrees());
 
+    }
+
+    private int getCameraId(){
+        if(frontCamera){
+            frontCamera = false;
+            return getBackCameraId();
+        }else{
+            frontCamera = true;
+            return getFrontCameraId();
+        }
+    }
+
+    private int getBackCameraId(){
+        int numberOfCameras = Camera.getNumberOfCameras();
+        for(int i = 0; i < numberOfCameras; i++){
+            Camera.CameraInfo info = new Camera.CameraInfo();
+            Camera.getCameraInfo(i, info);
+            if(info.facing == Camera.CameraInfo.CAMERA_FACING_BACK){
+                return i;
+            }
+        }
+        return -1;
+    }
+
+    private int getFrontCameraId(){
+        int numberOfCameras = Camera.getNumberOfCameras();
+        for(int i = 0; i < numberOfCameras; i++){
+            Camera.CameraInfo info = new Camera.CameraInfo();
+            Camera.getCameraInfo(i, info);
+            if(info.facing == Camera.CameraInfo.CAMERA_FACING_FRONT){
+                return i;
+            }
+        }
+        return -1;
+    }
+
+    private int getCameraOrientationDegrees(){
+        int rotation = activity.getWindowManager().getDefaultDisplay()
+                .getRotation();
+        int degrees = 0;
+        switch (rotation) {
+            case Surface.ROTATION_0: degrees = 0; break;
+            case Surface.ROTATION_90: degrees = 90; break;
+            case Surface.ROTATION_180: degrees = 180; break;
+            case Surface.ROTATION_270: degrees = 270; break;
+        }
+        Camera.CameraInfo info = new Camera.CameraInfo();
+        Camera.getCameraInfo(this.currentCamera, info);
+        int result;
+        if (info.facing == Camera.CameraInfo.CAMERA_FACING_FRONT) {
+            result = (info.orientation + degrees) % 360;
+            result = (360 - result) % 360;  // compensate the mirror
+        } else {  // back-facing
+            result = (info.orientation - degrees + 360) % 360;
+        }
+        return result;
     }
 
     private Camera getCameraInstance(int cameraId){
