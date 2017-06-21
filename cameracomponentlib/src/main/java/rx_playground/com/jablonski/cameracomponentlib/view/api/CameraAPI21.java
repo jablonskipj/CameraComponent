@@ -100,9 +100,9 @@ public class CameraAPI21 implements CameraAPI {
 
         @Override
         public void onImageAvailable(ImageReader reader) {
-            ImageSaver saver = new ImageSaver(reader, finalImagePath);
+            /*ImageSaver saver = new ImageSaver(reader, finalImagePath);
             saver.setCallback(imageCapturedCallback);
-            backgroundHandler.post(saver);
+            backgroundHandler.post(saver);*/
         }
 
     };
