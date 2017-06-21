@@ -6,8 +6,10 @@ import android.view.Surface;
 import android.view.SurfaceHolder;
 import android.view.SurfaceView;
 
+import java.io.File;
 import java.io.IOException;
 
+import rx_playground.com.jablonski.cameracomponentlib.view.helper.ImageSaver;
 import rx_playground.com.jablonski.cameracomponentlib.view.interfaces.ImageResultCallback;
 
 /**
@@ -21,17 +23,29 @@ public class CameraOldApi implements CameraAPI, SurfaceHolder.Callback {
     private SurfaceView cameraPreview;
     private SurfaceHolder holder;
     private Activity activity;
+    private String finalImagePath;
     private ImageResultCallback callback;
+    private Camera.PictureCallback pictureCallback = new Camera.PictureCallback() {
+        @Override
+        public void onPictureTaken(byte[] data, Camera camera) {
+            ImageSaver saver = new ImageSaver(data, finalImagePath);
+            saver.setCallback(callback);
+            saver.run();
+        }
+    };
 
     public CameraOldApi(Activity activity, SurfaceView cameraPreview){
         this.activity = activity;
         this.cameraPreview = cameraPreview;
         this.holder = this.cameraPreview.getHolder();
         this.holder.addCallback(this);
+        this.finalImagePath = activity.getFilesDir().getAbsolutePath() + "/pictures";
     }
     @Override
     public void takePhoto() {
-
+        if(this.camera != null && this.callback != null){
+            this.camera.takePicture(null, null, pictureCallback);
+        }
     }
 
     @Override

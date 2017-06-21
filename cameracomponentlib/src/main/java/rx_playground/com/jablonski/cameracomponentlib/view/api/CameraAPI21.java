@@ -100,20 +100,9 @@ public class CameraAPI21 implements CameraAPI {
 
         @Override
         public void onImageAvailable(ImageReader reader) {
-            File file = new File(finalImagePath);
-            if(!file.isDirectory()) {
-                file.mkdirs();
-            }
-            try {
-                file = new File(finalImagePath  + "/" + System.currentTimeMillis() + ".jpg");
-                file.createNewFile();
-
-                ImageSaver saver = new ImageSaver(reader, file);
-                saver.setCallback(imageCapturedCallback);
-                backgroundHandler.post(saver);
-            } catch (IOException e) {
-                e.printStackTrace();
-            }
+            ImageSaver saver = new ImageSaver(reader, finalImagePath);
+            saver.setCallback(imageCapturedCallback);
+            backgroundHandler.post(saver);
         }
 
     };
